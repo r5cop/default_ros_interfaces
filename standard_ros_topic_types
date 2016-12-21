@@ -1,0 +1,30 @@
+#!/bin/bash
+
+# Get all standard ros interface packages
+echo "Fetching standard ros interfaces packages from http://www.ros.org/browse/list.php ..."
+standard_ros_interface_packages=`curl -s http://www.ros.org/browse/list.php | grep -ioh 'distro=kinetic&name=\w*' | sed 's/distro=kinetic&name=\(\w*\)/\1/g' | sort -u`
+echo $standard_ros_interface_packages
+echo ""
+echo "Fetching ros interface packages from the ros master: $ROS_MASTER_URI"
+ros_packages_of_ros_interfaces=`rostopic list -v | grep ' \* ' | sed 's/ \* \(.*]\).*/\1/' | sort -u | sed 's/.*\[\(.*\)\/.*/\1/g'`
+echo $ros_packages_of_ros_interfaces
+echo ""
+
+num_standard_interfaces=0
+num_custom_interfaces=0
+for package_of_interface in $ros_packages_of_ros_interfaces
+do
+    if [[ $standard_ros_interface_packages =~ (^|[[:space:]])$package_of_interface($|[[:space:]]) ]]; then
+        ((num_standard_interfaces++))
+    else
+        ((num_custom_interfaces++))
+    fi
+done
+num_total_interfaces=$(($num_standard_interfaces+$num_custom_interfaces))
+
+echo "Standard ROS Interfaces: $num_standard_interfaces"
+echo "Custom ROS Interfaces: $num_custom_interfaces"
+echo "Total Interfaces: $num_total_interfaces"
+echo ""
+percentage=`echo "$num_standard_interfaces / $num_total_interfaces" | bc -l`
+echo "Percentage standard ROS interfaces: " $percentage 
